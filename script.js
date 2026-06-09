@@ -60,7 +60,8 @@ async function generateAIReport(name, sport, games, goals, strengths, weaknesses
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
   try {
-    const response = await fetch("http://localhost:3000/generate-report", {
+    const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
+  
       method: "POST",
       headers: {
         "Content-Type": "application/json"
