@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+  <meta charset="UTF-8">
+  <title>Sports AI Report</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Sports AI Report</h1>
+
+  <input id="name" placeholder="Nafn leikmanns">
+
+  <select id="sport">
+    <option value="Fótbolti">Fótbolti</option>
+    <option value="Handbolti">Handbolti</option>
+    <option value="Körfubolti">Körfubolti</option>
+  </select>
+
+  <input id="games" type="number" placeholder="Leikir">
+  <input id="goals" type="number" placeholder="Mörk/Stig">
+
+  <textarea id="strengths" placeholder="Styrkleikar"></textarea>
+  <textarea id="weaknesses" placeholder="Atriði til að bæta"></textarea>
+
+  <button onclick="generateReport()">Búa til skýrslu</button>
+
+  <div id="report"></div>
+
+  <h2>AI Skýrsla</h2>
+  <div id="aiReport">AI skýrsla mun birtast hér...</div>
+
+  <button onclick="saveReport()">Vista skýrslu</button>
+
+  <h2>Vistaðar skýrslur</h2>
+  <div id="savedReports"></div>
+
+  <h2>Leaderboard</h2>
+  <div id="leaderboard"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
