@@ -30,10 +30,38 @@ button {
   cursor: pointer;
 }
 
-#report, #aiReport, .saved-report, .leaderboard-item {
+#report,
+#aiReport,
+.saved-report,
+.leaderboard-item {
   background: white;
   margin-top: 20px;
   padding: 20px;
   border-radius: 8px;
   line-height: 1.6;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.dashboard-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.dashboard-card h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.dashboard-card p {
+  font-size: 26px;
+  font-weight: bold;
+  margin: 10px 0 0;
 }

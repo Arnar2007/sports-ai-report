@@ -137,6 +137,7 @@ function saveReport() {
 
   showSavedReports();
   showLeaderboard();
+  showDashboard();
 }
 
 function showSavedReports() {
@@ -188,6 +189,54 @@ function showLeaderboard() {
   });
 }
 
+function showDashboard() {
+  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
+  const dashboardDiv = document.getElementById("dashboard");
+
+  if (savedReports.length === 0) {
+    dashboardDiv.innerHTML = "<p>Engin gögn komin enn.</p>";
+    return;
+  }
+
+  const totalPlayers = savedReports.length;
+
+  const totalGoals = savedReports.reduce((sum, item) => {
+    return sum + Number(item.goals);
+  }, 0);
+
+  const totalGames = savedReports.reduce((sum, item) => {
+    return sum + Number(item.games);
+  }, 0);
+
+  const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
+
+  const bestPlayer = [...savedReports].sort((a, b) => b.avg - a.avg)[0];
+
+  dashboardDiv.innerHTML = `
+    <div class="dashboard-grid">
+      <div class="dashboard-card">
+        <h3>Leikmenn</h3>
+        <p>${totalPlayers}</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Heildar mörk/stig</h3>
+        <p>${totalGoals}</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Meðaltal</h3>
+        <p>${overallAvg.toFixed(2)}</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Besti leikmaður</h3>
+        <p>${bestPlayer.name}</p>
+      </div>
+    </div>
+  `;
+}
+
 function deleteReport(index) {
   const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
 
@@ -196,7 +245,9 @@ function deleteReport(index) {
 
   showSavedReports();
   showLeaderboard();
+  showDashboard();
 }
 
 showSavedReports();
 showLeaderboard();
+showDashboard();
