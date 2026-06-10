@@ -138,6 +138,7 @@ function saveReport() {
   showSavedReports();
   showLeaderboard();
   showDashboard();
+  showPlayerCard();
 }
 
 function showSavedReports() {
@@ -237,6 +238,30 @@ function showDashboard() {
   `;
 }
 
+function showPlayerCard() {
+  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
+  const playerCardDiv = document.getElementById("playerCard");
+
+  if (savedReports.length === 0) {
+    playerCardDiv.innerHTML = "<p>Enginn leikmaður vistaður enn.</p>";
+    return;
+  }
+
+  const bestPlayer = [...savedReports].sort((a, b) => b.avg - a.avg)[0];
+
+  playerCardDiv.innerHTML = `
+    <div class="player-card">
+      <h3>🏆 ${bestPlayer.name}</h3>
+      <p><strong>Lið:</strong> ${bestPlayer.team || "Óskráð"}</p>
+      <p><strong>Staða:</strong> ${bestPlayer.position || "Óskráð"}</p>
+      <p><strong>Íþrótt:</strong> ${bestPlayer.sport}</p>
+      <p><strong>Meðaltal:</strong> ${bestPlayer.avg.toFixed(2)}</p>
+      <p><strong>Mörk/Stig:</strong> ${bestPlayer.goals}</p>
+      <p><strong>Leikir:</strong> ${bestPlayer.games}</p>
+    </div>
+  `;
+}
+
 function deleteReport(index) {
   const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
 
@@ -246,8 +271,10 @@ function deleteReport(index) {
   showSavedReports();
   showLeaderboard();
   showDashboard();
+  showPlayerCard();
 }
 
 showSavedReports();
 showLeaderboard();
 showDashboard();
+showPlayerCard();
