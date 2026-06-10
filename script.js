@@ -277,4 +277,64 @@ function deleteReport(index) {
 showSavedReports();
 showLeaderboard();
 showDashboard();
-showPlayerCard();
+showPlayerCard();function downloadPDF() {
+  const report = document.getElementById("report").innerHTML;
+  const aiReport = document.getElementById("aiReport").innerHTML;
+
+  if (
+    !aiReport ||
+    aiReport.includes("mun birtast") ||
+    aiReport.includes("AI er að skrifa")
+  ) {
+    alert("Búðu fyrst til skýrslu.");
+    return;
+  }
+
+  const pdfWindow = window.open("", "_blank");
+
+  pdfWindow.document.write(`
+    <html>
+      <head>
+        <title>Sports AI Report</title>
+
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            line-height: 1.6;
+          }
+
+          h1 {
+            text-align: center;
+          }
+
+          .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+          }
+        </style>
+
+      </head>
+
+      <body>
+
+        <h1>Sports AI Report</h1>
+
+        <div class="section">
+          ${report}
+        </div>
+
+        <div class="section">
+          <h2>AI Skýrsla</h2>
+          ${aiReport}
+        </div>
+
+      </body>
+    </html>
+  `);
+
+  pdfWindow.document.close();
+  pdfWindow.print();
+}
