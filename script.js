@@ -1,14 +1,18 @@
 function generateReport() {
   const name = document.getElementById("name").value;
+  const age = Number(document.getElementById("age").value);
+  const team = document.getElementById("team").value;
+  const season = document.getElementById("season").value;
   const sport = document.getElementById("sport").value;
+  const position = document.getElementById("position").value;
   const games = Number(document.getElementById("games").value);
   const goals = Number(document.getElementById("goals").value);
   const strengths = document.getElementById("strengths").value;
   const weaknesses = document.getElementById("weaknesses").value;
   const reportDiv = document.getElementById("report");
 
-  if (!name || !games || goals < 0) {
-    reportDiv.innerHTML = "<p>Vinsamlegast fylltu inn nafn, leiki og mörk/stig.</p>";
+  if (!name || !age || !team || !season || !games || goals < 0) {
+    reportDiv.innerHTML = "<p>Vinsamlegast fylltu inn nafn, aldur, lið, tímabil, leiki og mörk/stig.</p>";
     reportDiv.style.backgroundColor = "white";
     return;
   }
@@ -30,16 +34,20 @@ function generateReport() {
   }
 
   if (sport === "Fótbolti") {
-    aiComment = `${name} hefur sýnt góða frammistöðu í sóknarleik.`;
+    aiComment = `${name} hefur sýnt góða frammistöðu í ${position.toLowerCase()} hlutverki.`;
   } else if (sport === "Handbolti") {
-    aiComment = `${name} hefur verið mikilvægur þáttur í leik liðsins.`;
+    aiComment = `${name} hefur verið mikilvægur þáttur í leik liðsins sem ${position.toLowerCase()}.`;
   } else if (sport === "Körfubolti") {
-    aiComment = `${name} hefur lagt mikið af mörkum í stigaskorun.`;
+    aiComment = `${name} hefur lagt mikið af mörkum sem ${position.toLowerCase()}.`;
   }
 
   reportDiv.innerHTML = `
     <h2>${name}</h2>
+    <p><strong>Aldur:</strong> ${age}</p>
+    <p><strong>Lið:</strong> ${team}</p>
+    <p><strong>Tímabil:</strong> ${season}</p>
     <p><strong>Íþrótt:</strong> ${sport}</p>
+    <p><strong>Staða:</strong> ${position}</p>
     <p><strong>Leikir:</strong> ${games}</p>
     <p><strong>Mörk/Stig:</strong> ${goals}</p>
     <p><strong>Meðaltal:</strong> ${avg.toFixed(2)}</p>
@@ -51,24 +59,27 @@ function generateReport() {
     <p>${weaknesses}</p>
   `;
 
-  generateAIReport(name, sport, games, goals, strengths, weaknesses);
+  generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses);
 }
 
-async function generateAIReport(name, sport, games, goals, strengths, weaknesses) {
+async function generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses) {
   const aiDiv = document.getElementById("aiReport");
 
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
   try {
     const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
-  
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         name,
+        age,
+        team,
+        season,
         sport,
+        position,
         games,
         goals,
         strengths,
@@ -92,7 +103,11 @@ async function generateAIReport(name, sport, games, goals, strengths, weaknesses
 function saveReport() {
   const aiText = document.getElementById("aiReport").innerText;
   const name = document.getElementById("name").value;
+  const age = Number(document.getElementById("age").value);
+  const team = document.getElementById("team").value;
+  const season = document.getElementById("season").value;
   const sport = document.getElementById("sport").value;
+  const position = document.getElementById("position").value;
   const games = Number(document.getElementById("games").value);
   const goals = Number(document.getElementById("goals").value);
   const avg = goals / games;
@@ -106,7 +121,11 @@ function saveReport() {
 
   savedReports.push({
     name,
+    age,
+    team,
+    season,
     sport,
+    position,
     goals,
     games,
     avg,
@@ -130,7 +149,11 @@ function showSavedReports() {
     savedDiv.innerHTML += `
       <div class="saved-report">
         <h3>${item.name}</h3>
+        <p><strong>Aldur:</strong> ${item.age || "Óskráð"}</p>
+        <p><strong>Lið:</strong> ${item.team || "Óskráð"}</p>
+        <p><strong>Tímabil:</strong> ${item.season || "Óskráð"}</p>
         <p><strong>Íþrótt:</strong> ${item.sport}</p>
+        <p><strong>Staða:</strong> ${item.position || "Óskráð"}</p>
         <p><strong>Dagsetning:</strong> ${item.date}</p>
         <p>${item.report}</p>
         <button onclick="deleteReport(${index})">Eyða</button>
@@ -158,7 +181,7 @@ function showLeaderboard() {
     leaderboardDiv.innerHTML += `
       <div class="leaderboard-item">
         <strong>${medal} ${item.name}</strong>
-        <p>Íþrótt: ${item.sport}</p>
+        <p>${item.team || "Óskráð lið"} | ${item.position || "Óskráð staða"} | ${item.sport}</p>
         <p>Meðaltal: ${item.avg.toFixed(2)} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
       </div>
     `;

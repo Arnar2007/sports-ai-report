@@ -1,37 +1,79 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
+import dotenv from "dotenv";
 import OpenAI from "openai";
 
+dotenv.config();
+
 const app = express();
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 app.use(cors());
 app.use(express.json());
 
+console.log("API key loaded:", process.env.OPENAI_API_KEY ? "YES" : "NO");
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 app.post("/generate-report", async (req, res) => {
+  console.log("Beiðni kom inn í /generate-report");
+
   try {
-    const { name, sport, games, goals, strengths, weaknesses } = req.body;
+    const {
+      name,
+      age,
+      team,
+      season,
+      sport,
+      position,
+      games,
+      goals,
+      strengths,
+      weaknesses,
+    } = req.body;
 
-    const response = await client.responses.create({
+    const prompt = `
+Skrifaðu faglega íþróttaskýrslu á íslensku.
+
+Upplýsingar:
+- Nafn: ${name}
+- Aldur: ${age}
+- Lið: ${team}
+- Tímabil: ${season}
+- Íþrótt: ${sport}
+- Staða: ${position}
+- Leikir: ${games}
+- Mörk/Stig: ${goals}
+- Styrkleikar: ${strengths}
+- Atriði til að bæta: ${weaknesses}
+
+Skrifaðu 1-2 málsgreinar.
+Hafðu skýrsluna gagnlega fyrir þjálfara.
+Nefndu hvað leikmaðurinn gerir vel og hvað hann ætti að bæta.
+`;
+
+    const response = await client.chat.completions.create({
       model: "gpt-4.1-mini",
-      input: `Skrifaðu stutta íslenska íþróttaskýrslu fyrir leikmann.
-Nafn: ${name}
-Íþrótt: ${sport}
-Leikir: ${games}
-Mörk/Stig: ${goals}
-Styrkleikar: ${strengths}
-Veikleikar: ${weaknesses}
-
-Hafðu þetta faglegt, einfalt og gagnlegt fyrir þjálfara.`,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 350,
     });
 
-    res.json({ report: response.output_text });
+    const report = response.choices[0].message.content;
+
+    res.json({ report });
   } catch (error) {
+    console.error("OPENAI ERROR:");
     console.error(error);
-    res.status(500).json({ error: "Villa kom upp við að búa til skýrslu." });
+
+    res.status(500).json({
+      error: "Villa kom upp við að búa til skýrslu.",
+    });
   }
 });
 
