@@ -41,7 +41,8 @@ function generateReport() {
   const reportDiv = document.getElementById("report");
 
   if (!name || !age || !team || !season || !games || goals < 0) {
-    reportDiv.innerHTML = "<p>Vinsamlegast fylltu inn nafn, aldur, lið, tímabil, leiki og mörk/stig.</p>";
+    reportDiv.innerHTML =
+      "<p>Vinsamlegast fylltu inn nafn, aldur, lið, tímabil, leiki og mörk/stig.</p>";
     reportDiv.style.backgroundColor = "white";
     return;
   }
@@ -73,7 +74,11 @@ function generateReport() {
 
   reportDiv.innerHTML = `
     <h2>${name}</h2>
-    ${currentImage ? `<img src="${currentImage}" style="width:140px;height:140px;object-fit:cover;border-radius:50%;">` : ""}
+    ${
+      currentImage
+        ? `<img src="${currentImage}" style="width:140px;height:140px;object-fit:cover;border-radius:50%;">`
+        : ""
+    }
     <p><strong>Aldur:</strong> ${age}</p>
     <p><strong>Lið:</strong> ${team}</p>
     <p><strong>Tímabil:</strong> ${season}</p>
@@ -91,33 +96,58 @@ function generateReport() {
     <p>${weaknesses}</p>
   `;
 
-  generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses);
+  generateAIReport(
+    name,
+    age,
+    team,
+    season,
+    sport,
+    position,
+    games,
+    goals,
+    strengths,
+    weaknesses
+  );
 }
 
-async function generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses) {
+async function generateAIReport(
+  name,
+  age,
+  team,
+  season,
+  sport,
+  position,
+  games,
+  goals,
+  strengths,
+  weaknesses
+) {
   const aiDiv = document.getElementById("aiReport");
 
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
   try {
-    const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        age,
-        team,
-        season,
-        sport,
-        position,
-        games,
-        goals,
-        strengths,
-        weaknesses
-      })
-    });
+    const response = await fetch(
+      "https://sports-ai-report.onrender.com/generate-report",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          age,
+          team,
+          season,
+          sport,
+          position,
+          games,
+          goals,
+          strengths,
+          weaknesses
+        })
+      }
+    );
 
     const data = await response.json();
 
@@ -145,7 +175,11 @@ function saveReport() {
   const avg = goals / games;
   const playerRating = calculatePlayerRating(avg);
 
-  if (!aiText || aiText.includes("mun birtast") || aiText.includes("AI er að skrifa")) {
+  if (
+    !aiText ||
+    aiText.includes("mun birtast") ||
+    aiText.includes("AI er að skrifa")
+  ) {
     alert("Búðu fyrst til AI skýrslu.");
     return;
   }
@@ -179,14 +213,35 @@ function saveReport() {
 function showSavedReports() {
   const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
   const savedDiv = document.getElementById("savedReports");
+  const searchInput = document.getElementById("searchInput");
+
+  const searchText = searchInput ? searchInput.value.toLowerCase() : "";
+
+  const filteredReports = savedReports
+    .map((item, originalIndex) => ({ item, originalIndex }))
+    .filter(({ item }) => {
+      return (
+        (item.name || "").toLowerCase().includes(searchText) ||
+        (item.team || "").toLowerCase().includes(searchText) ||
+        (item.sport || "").toLowerCase().includes(searchText) ||
+        (item.position || "").toLowerCase().includes(searchText)
+      );
+    });
 
   savedDiv.innerHTML = "";
 
-  savedReports.forEach((item, index) => {
+  if (filteredReports.length === 0) {
+    savedDiv.innerHTML = "<p>Engir leikmenn fundust.</p>";
+    return;
+  }
+
+  filteredReports.forEach(({ item, originalIndex }) => {
     savedDiv.innerHTML += `
       <div class="saved-report">
         ${item.image ? `<img src="${item.image}" alt="${item.name}">` : ""}
+
         <h3>${item.name}</h3>
+
         <p><strong>Aldur:</strong> ${item.age || "Óskráð"}</p>
         <p><strong>Lið:</strong> ${item.team || "Óskráð"}</p>
         <p><strong>Tímabil:</strong> ${item.season || "Óskráð"}</p>
@@ -194,8 +249,10 @@ function showSavedReports() {
         <p><strong>Staða:</strong> ${item.position || "Óskráð"}</p>
         <p><strong>Rating:</strong> ${item.rating || "Óskráð"}/10</p>
         <p><strong>Dagsetning:</strong> ${item.date}</p>
+
         <p>${item.report}</p>
-        <button onclick="deleteReport(${index})">Eyða</button>
+
+        <button onclick="deleteReport(${originalIndex})">Eyða</button>
       </div>
     `;
   });
@@ -220,8 +277,12 @@ function showLeaderboard() {
     leaderboardDiv.innerHTML += `
       <div class="leaderboard-item">
         <strong>${medal} ${item.name}</strong>
-        <p>${item.team || "Óskráð lið"} | ${item.position || "Óskráð staða"} | ${item.sport}</p>
-        <p>Rating: ${item.rating || "Óskráð"}/10 | Meðaltal: ${item.avg.toFixed(2)} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
+        <p>${item.team || "Óskráð lið"} | ${
+      item.position || "Óskráð staða"
+    } | ${item.sport}</p>
+        <p>Rating: ${item.rating || "Óskráð"}/10 | Meðaltal: ${item.avg.toFixed(
+      2
+    )} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
       </div>
     `;
   });
@@ -237,8 +298,14 @@ function showDashboard() {
   }
 
   const totalPlayers = savedReports.length;
-  const totalGoals = savedReports.reduce((sum, item) => sum + Number(item.goals), 0);
-  const totalGames = savedReports.reduce((sum, item) => sum + Number(item.games), 0);
+  const totalGoals = savedReports.reduce(
+    (sum, item) => sum + Number(item.goals),
+    0
+  );
+  const totalGames = savedReports.reduce(
+    (sum, item) => sum + Number(item.games),
+    0
+  );
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
   const bestPlayer = [...savedReports].sort((a, b) => b.avg - a.avg)[0];
 
@@ -248,14 +315,17 @@ function showDashboard() {
         <h3>Leikmenn</h3>
         <p>${totalPlayers}</p>
       </div>
+
       <div class="dashboard-card">
         <h3>Heildar mörk/stig</h3>
         <p>${totalGoals}</p>
       </div>
+
       <div class="dashboard-card">
         <h3>Meðaltal</h3>
         <p>${overallAvg.toFixed(2)}</p>
       </div>
+
       <div class="dashboard-card">
         <h3>Besti leikmaður</h3>
         <p>${bestPlayer.name}</p>
@@ -277,7 +347,11 @@ function showPlayerCard() {
 
   playerCardDiv.innerHTML = `
     <div class="player-card">
-      ${bestPlayer.image ? `<img src="${bestPlayer.image}" alt="${bestPlayer.name}">` : ""}
+      ${
+        bestPlayer.image
+          ? `<img src="${bestPlayer.image}" alt="${bestPlayer.name}">`
+          : ""
+      }
       <h3>🏆 ${bestPlayer.name}</h3>
       <p><strong>Lið:</strong> ${bestPlayer.team || "Óskráð"}</p>
       <p><strong>Staða:</strong> ${bestPlayer.position || "Óskráð"}</p>
@@ -306,7 +380,11 @@ function downloadPDF() {
   const report = document.getElementById("report").innerHTML;
   const aiReport = document.getElementById("aiReport").innerHTML;
 
-  if (!aiReport || aiReport.includes("mun birtast") || aiReport.includes("AI er að skrifa")) {
+  if (
+    !aiReport ||
+    aiReport.includes("mun birtast") ||
+    aiReport.includes("AI er að skrifa")
+  ) {
     alert("Búðu fyrst til skýrslu.");
     return;
   }
@@ -323,15 +401,18 @@ function downloadPDF() {
             padding: 30px;
             line-height: 1.6;
           }
+
           h1 {
             text-align: center;
           }
+
           .section {
             border: 1px solid #ddd;
             padding: 20px;
             margin-top: 20px;
             border-radius: 10px;
           }
+
           img {
             width: 140px;
             height: 140px;
@@ -340,9 +421,14 @@ function downloadPDF() {
           }
         </style>
       </head>
+
       <body>
         <h1>Sports AI Report</h1>
-        <div class="section">${report}</div>
+
+        <div class="section">
+          ${report}
+        </div>
+
         <div class="section">
           <h2>AI Skýrsla</h2>
           ${aiReport}
