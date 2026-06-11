@@ -2,7 +2,6 @@ let currentImage = "";
 
 document.getElementById("playerImage").addEventListener("change", function () {
   const file = this.files[0];
-
   if (!file) return;
 
   const reader = new FileReader();
@@ -17,6 +16,16 @@ document.getElementById("playerImage").addEventListener("change", function () {
 
   reader.readAsDataURL(file);
 });
+
+function calculatePlayerRating(avg) {
+  let playerRating = avg * 5;
+
+  if (playerRating > 10) {
+    playerRating = 10;
+  }
+
+  return playerRating.toFixed(1);
+}
 
 function generateReport() {
   const name = document.getElementById("name").value;
@@ -38,6 +47,7 @@ function generateReport() {
   }
 
   const avg = goals / games;
+  const playerRating = calculatePlayerRating(avg);
 
   let rating = "";
   let aiComment = "";
@@ -72,6 +82,7 @@ function generateReport() {
     <p><strong>Leikir:</strong> ${games}</p>
     <p><strong>Mörk/Stig:</strong> ${goals}</p>
     <p><strong>Meðaltal:</strong> ${avg.toFixed(2)}</p>
+    <p><strong>Rating:</strong> ${playerRating}/10</p>
     <p><strong>Mat:</strong> ${rating}</p>
     <p><strong>Athugasemd:</strong> ${aiComment}</p>
     <p><strong>Styrkleikar:</strong></p>
@@ -132,6 +143,7 @@ function saveReport() {
   const games = Number(document.getElementById("games").value);
   const goals = Number(document.getElementById("goals").value);
   const avg = goals / games;
+  const playerRating = calculatePlayerRating(avg);
 
   if (!aiText || aiText.includes("mun birtast") || aiText.includes("AI er að skrifa")) {
     alert("Búðu fyrst til AI skýrslu.");
@@ -150,6 +162,7 @@ function saveReport() {
     goals,
     games,
     avg,
+    rating: playerRating,
     image: currentImage,
     report: aiText,
     date: new Date().toLocaleString()
@@ -179,6 +192,7 @@ function showSavedReports() {
         <p><strong>Tímabil:</strong> ${item.season || "Óskráð"}</p>
         <p><strong>Íþrótt:</strong> ${item.sport}</p>
         <p><strong>Staða:</strong> ${item.position || "Óskráð"}</p>
+        <p><strong>Rating:</strong> ${item.rating || "Óskráð"}/10</p>
         <p><strong>Dagsetning:</strong> ${item.date}</p>
         <p>${item.report}</p>
         <button onclick="deleteReport(${index})">Eyða</button>
@@ -207,7 +221,7 @@ function showLeaderboard() {
       <div class="leaderboard-item">
         <strong>${medal} ${item.name}</strong>
         <p>${item.team || "Óskráð lið"} | ${item.position || "Óskráð staða"} | ${item.sport}</p>
-        <p>Meðaltal: ${item.avg.toFixed(2)} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
+        <p>Rating: ${item.rating || "Óskráð"}/10 | Meðaltal: ${item.avg.toFixed(2)} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
       </div>
     `;
   });
@@ -223,7 +237,6 @@ function showDashboard() {
   }
 
   const totalPlayers = savedReports.length;
-
   const totalGoals = savedReports.reduce((sum, item) => sum + Number(item.goals), 0);
   const totalGames = savedReports.reduce((sum, item) => sum + Number(item.games), 0);
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
@@ -270,6 +283,7 @@ function showPlayerCard() {
       <p><strong>Staða:</strong> ${bestPlayer.position || "Óskráð"}</p>
       <p><strong>Íþrótt:</strong> ${bestPlayer.sport}</p>
       <p><strong>Meðaltal:</strong> ${bestPlayer.avg.toFixed(2)}</p>
+      <p><strong>Rating:</strong> ${bestPlayer.rating || "Óskráð"}/10</p>
       <p><strong>Mörk/Stig:</strong> ${bestPlayer.goals}</p>
       <p><strong>Leikir:</strong> ${bestPlayer.games}</p>
     </div>
