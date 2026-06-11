@@ -1,3 +1,23 @@
+let currentImage = "";
+
+document.getElementById("playerImage").addEventListener("change", function () {
+  const file = this.files[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    currentImage = e.target.result;
+
+    const preview = document.getElementById("imagePreview");
+    preview.src = currentImage;
+    preview.style.display = "block";
+  };
+
+  reader.readAsDataURL(file);
+});
+
 function generateReport() {
   const name = document.getElementById("name").value;
   const age = Number(document.getElementById("age").value);
@@ -43,6 +63,7 @@ function generateReport() {
 
   reportDiv.innerHTML = `
     <h2>${name}</h2>
+    ${currentImage ? `<img src="${currentImage}" style="width:140px;height:140px;object-fit:cover;border-radius:50%;">` : ""}
     <p><strong>Aldur:</strong> ${age}</p>
     <p><strong>Lið:</strong> ${team}</p>
     <p><strong>Tímabil:</strong> ${season}</p>
@@ -129,6 +150,7 @@ function saveReport() {
     goals,
     games,
     avg,
+    image: currentImage,
     report: aiText,
     date: new Date().toLocaleString()
   });
@@ -150,6 +172,7 @@ function showSavedReports() {
   savedReports.forEach((item, index) => {
     savedDiv.innerHTML += `
       <div class="saved-report">
+        ${item.image ? `<img src="${item.image}" alt="${item.name}">` : ""}
         <h3>${item.name}</h3>
         <p><strong>Aldur:</strong> ${item.age || "Óskráð"}</p>
         <p><strong>Lið:</strong> ${item.team || "Óskráð"}</p>
@@ -201,16 +224,9 @@ function showDashboard() {
 
   const totalPlayers = savedReports.length;
 
-  const totalGoals = savedReports.reduce((sum, item) => {
-    return sum + Number(item.goals);
-  }, 0);
-
-  const totalGames = savedReports.reduce((sum, item) => {
-    return sum + Number(item.games);
-  }, 0);
-
+  const totalGoals = savedReports.reduce((sum, item) => sum + Number(item.goals), 0);
+  const totalGames = savedReports.reduce((sum, item) => sum + Number(item.games), 0);
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
-
   const bestPlayer = [...savedReports].sort((a, b) => b.avg - a.avg)[0];
 
   dashboardDiv.innerHTML = `
@@ -219,17 +235,14 @@ function showDashboard() {
         <h3>Leikmenn</h3>
         <p>${totalPlayers}</p>
       </div>
-
       <div class="dashboard-card">
         <h3>Heildar mörk/stig</h3>
         <p>${totalGoals}</p>
       </div>
-
       <div class="dashboard-card">
         <h3>Meðaltal</h3>
         <p>${overallAvg.toFixed(2)}</p>
       </div>
-
       <div class="dashboard-card">
         <h3>Besti leikmaður</h3>
         <p>${bestPlayer.name}</p>
@@ -251,6 +264,7 @@ function showPlayerCard() {
 
   playerCardDiv.innerHTML = `
     <div class="player-card">
+      ${bestPlayer.image ? `<img src="${bestPlayer.image}" alt="${bestPlayer.name}">` : ""}
       <h3>🏆 ${bestPlayer.name}</h3>
       <p><strong>Lið:</strong> ${bestPlayer.team || "Óskráð"}</p>
       <p><strong>Staða:</strong> ${bestPlayer.position || "Óskráð"}</p>
@@ -274,18 +288,11 @@ function deleteReport(index) {
   showPlayerCard();
 }
 
-showSavedReports();
-showLeaderboard();
-showDashboard();
-showPlayerCard();function downloadPDF() {
+function downloadPDF() {
   const report = document.getElementById("report").innerHTML;
   const aiReport = document.getElementById("aiReport").innerHTML;
 
-  if (
-    !aiReport ||
-    aiReport.includes("mun birtast") ||
-    aiReport.includes("AI er að skrifa")
-  ) {
+  if (!aiReport || aiReport.includes("mun birtast") || aiReport.includes("AI er að skrifa")) {
     alert("Búðu fyrst til skýrslu.");
     return;
   }
@@ -296,41 +303,36 @@ showPlayerCard();function downloadPDF() {
     <html>
       <head>
         <title>Sports AI Report</title>
-
         <style>
           body {
             font-family: Arial, sans-serif;
             padding: 30px;
             line-height: 1.6;
           }
-
           h1 {
             text-align: center;
           }
-
           .section {
             border: 1px solid #ddd;
             padding: 20px;
             margin-top: 20px;
             border-radius: 10px;
           }
+          img {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 50%;
+          }
         </style>
-
       </head>
-
       <body>
-
         <h1>Sports AI Report</h1>
-
-        <div class="section">
-          ${report}
-        </div>
-
+        <div class="section">${report}</div>
         <div class="section">
           <h2>AI Skýrsla</h2>
           ${aiReport}
         </div>
-
       </body>
     </html>
   `);
@@ -338,3 +340,8 @@ showPlayerCard();function downloadPDF() {
   pdfWindow.document.close();
   pdfWindow.print();
 }
+
+showSavedReports();
+showLeaderboard();
+showDashboard();
+showPlayerCard();

@@ -42,6 +42,16 @@ button {
   line-height: 1.6;
 }
 
+#imagePreview {
+  display: none;
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin: 15px auto;
+  border: 3px solid #ddd;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -70,6 +80,16 @@ button {
 .player-card {
   text-align: center;
   border: 3px solid gold;
+}
+
+.player-card img,
+.saved-report img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid gold;
+  margin-bottom: 15px;
 }
 
 .player-card h3 {

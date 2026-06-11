@@ -14,6 +14,9 @@
   <input id="team" placeholder="Lið">
   <input id="season" placeholder="Tímabil, t.d. 2025/26">
 
+  <input id="playerImage" type="file" accept="image/*">
+  <img id="imagePreview" alt="Forskoðun myndar">
+
   <select id="sport">
     <option value="Fótbolti">Fótbolti</option>
     <option value="Handbolti">Handbolti</option>
@@ -44,7 +47,7 @@
   <div id="aiReport">AI skýrsla mun birtast hér...</div>
 
   <button onclick="saveReport()">Vista skýrslu</button>
-<button onclick="downloadPDF()">📄 Sækja PDF</button>
+  <button onclick="downloadPDF()">📄 Sækja PDF</button>
 
   <h2>Player of the Season</h2>
   <div id="playerCard"></div>
