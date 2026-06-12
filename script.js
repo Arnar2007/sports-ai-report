@@ -1,4 +1,5 @@
 let currentImage = "";
+let savedReportsCache = [];
 
 document.getElementById("playerImage").addEventListener("change", function () {
   const file = this.files[0];
@@ -19,12 +20,29 @@ document.getElementById("playerImage").addEventListener("change", function () {
 
 function calculatePlayerRating(avg) {
   let playerRating = avg * 5;
-
-  if (playerRating > 10) {
-    playerRating = 10;
-  }
-
+  if (playerRating > 10) playerRating = 10;
   return playerRating.toFixed(1);
+}
+
+function reportsCollection() {
+  return window.collection(window.db, "reports");
+}
+
+async function loadReportsFromFirebase() {
+  const snapshot = await window.getDocs(reportsCollection());
+
+  savedReportsCache = snapshot.docs.map((docSnap) => {
+    return {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+  });
+
+  showSavedReports();
+  showLeaderboard();
+  showDashboard();
+  showPlayerCard();
+  updateCompareDropdowns();
 }
 
 function generateReport() {
@@ -96,58 +114,32 @@ function generateReport() {
     <p>${weaknesses}</p>
   `;
 
-  generateAIReport(
-    name,
-    age,
-    team,
-    season,
-    sport,
-    position,
-    games,
-    goals,
-    strengths,
-    weaknesses
-  );
+  generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses);
 }
 
-async function generateAIReport(
-  name,
-  age,
-  team,
-  season,
-  sport,
-  position,
-  games,
-  goals,
-  strengths,
-  weaknesses
-) {
+async function generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses) {
   const aiDiv = document.getElementById("aiReport");
-
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
   try {
-    const response = await fetch(
-      "https://sports-ai-report.onrender.com/generate-report",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name,
-          age,
-          team,
-          season,
-          sport,
-          position,
-          games,
-          goals,
-          strengths,
-          weaknesses
-        })
-      }
-    );
+    const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        age,
+        team,
+        season,
+        sport,
+        position,
+        games,
+        goals,
+        strengths,
+        weaknesses
+      })
+    });
 
     const data = await response.json();
 
@@ -162,7 +154,7 @@ async function generateAIReport(
   }
 }
 
-function saveReport() {
+async function saveReport() {
   const aiText = document.getElementById("aiReport").innerText;
   const name = document.getElementById("name").value;
   const age = Number(document.getElementById("age").value);
@@ -184,9 +176,7 @@ function saveReport() {
     return;
   }
 
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
-
-  savedReports.push({
+  const reportData = {
     name,
     age,
     team,
@@ -199,35 +189,33 @@ function saveReport() {
     rating: playerRating,
     image: currentImage,
     report: aiText,
-    date: new Date().toLocaleString()
-  });
+    date: new Date().toLocaleString(),
+    createdAt: Date.now()
+  };
 
-  localStorage.setItem("reports", JSON.stringify(savedReports));
-
-  showSavedReports();
-  showLeaderboard();
-  showDashboard();
-  showPlayerCard();
-  updateCompareDropdowns();
+  try {
+    await window.addDoc(reportsCollection(), reportData);
+    await loadReportsFromFirebase();
+    alert("Skýrsla vistuð í Firebase!");
+  } catch (error) {
+    console.error(error);
+    alert("Villa við að vista í Firebase.");
+  }
 }
 
 function showSavedReports() {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
   const savedDiv = document.getElementById("savedReports");
   const searchInput = document.getElementById("searchInput");
-
   const searchText = searchInput ? searchInput.value.toLowerCase() : "";
 
-  const filteredReports = savedReports
-    .map((item, originalIndex) => ({ item, originalIndex }))
-    .filter(({ item }) => {
-      return (
-        (item.name || "").toLowerCase().includes(searchText) ||
-        (item.team || "").toLowerCase().includes(searchText) ||
-        (item.sport || "").toLowerCase().includes(searchText) ||
-        (item.position || "").toLowerCase().includes(searchText)
-      );
-    });
+  const filteredReports = savedReportsCache.filter((item) => {
+    return (
+      (item.name || "").toLowerCase().includes(searchText) ||
+      (item.team || "").toLowerCase().includes(searchText) ||
+      (item.sport || "").toLowerCase().includes(searchText) ||
+      (item.position || "").toLowerCase().includes(searchText)
+    );
+  });
 
   savedDiv.innerHTML = "";
 
@@ -236,7 +224,7 @@ function showSavedReports() {
     return;
   }
 
-  filteredReports.forEach(({ item, originalIndex }) => {
+  filteredReports.forEach((item) => {
     savedDiv.innerHTML += `
       <div class="saved-report">
         ${item.image ? `<img src="${item.image}" alt="${item.name}">` : ""}
@@ -253,17 +241,15 @@ function showSavedReports() {
 
         <p>${item.report}</p>
 
-        <button onclick="deleteReport(${originalIndex})">Eyða</button>
+        <button onclick="deleteReport('${item.id}')">Eyða</button>
       </div>
     `;
   });
 }
 
 function showLeaderboard() {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
   const leaderboardDiv = document.getElementById("leaderboard");
-
-  const sortedReports = [...savedReports].sort((a, b) => b.avg - a.avg);
+  const sortedReports = [...savedReportsCache].sort((a, b) => b.avg - a.avg);
 
   leaderboardDiv.innerHTML = "";
 
@@ -278,37 +264,35 @@ function showLeaderboard() {
     leaderboardDiv.innerHTML += `
       <div class="leaderboard-item">
         <strong>${medal} ${item.name}</strong>
-        <p>${item.team || "Óskráð lið"} | ${
-      item.position || "Óskráð staða"
-    } | ${item.sport}</p>
-        <p>Rating: ${item.rating || "Óskráð"}/10 | Meðaltal: ${item.avg.toFixed(
-      2
-    )} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
+        <p>${item.team || "Óskráð lið"} | ${item.position || "Óskráð staða"} | ${item.sport}</p>
+        <p>Rating: ${item.rating || "Óskráð"}/10 | Meðaltal: ${Number(item.avg).toFixed(2)} | Mörk/Stig: ${item.goals} | Leikir: ${item.games}</p>
       </div>
     `;
   });
 }
 
 function showDashboard() {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
   const dashboardDiv = document.getElementById("dashboard");
 
-  if (savedReports.length === 0) {
+  if (savedReportsCache.length === 0) {
     dashboardDiv.innerHTML = "<p>Engin gögn komin enn.</p>";
     return;
   }
 
-  const totalPlayers = savedReports.length;
-  const totalGoals = savedReports.reduce(
+  const totalPlayers = savedReportsCache.length;
+
+  const totalGoals = savedReportsCache.reduce(
     (sum, item) => sum + Number(item.goals),
     0
   );
-  const totalGames = savedReports.reduce(
+
+  const totalGames = savedReportsCache.reduce(
     (sum, item) => sum + Number(item.games),
     0
   );
+
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
-  const bestPlayer = [...savedReports].sort((a, b) => b.avg - a.avg)[0];
+  const bestPlayer = [...savedReportsCache].sort((a, b) => b.avg - a.avg)[0];
 
   dashboardDiv.innerHTML = `
     <div class="dashboard-grid">
@@ -336,15 +320,14 @@ function showDashboard() {
 }
 
 function showPlayerCard() {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
   const playerCardDiv = document.getElementById("playerCard");
 
-  if (savedReports.length === 0) {
+  if (savedReportsCache.length === 0) {
     playerCardDiv.innerHTML = "<p>Enginn leikmaður vistaður enn.</p>";
     return;
   }
 
-  const bestPlayer = [...savedReports].sort((a, b) => b.avg - a.avg)[0];
+  const bestPlayer = [...savedReportsCache].sort((a, b) => b.avg - a.avg)[0];
 
   playerCardDiv.innerHTML = `
     <div class="player-card">
@@ -357,7 +340,7 @@ function showPlayerCard() {
       <p><strong>Lið:</strong> ${bestPlayer.team || "Óskráð"}</p>
       <p><strong>Staða:</strong> ${bestPlayer.position || "Óskráð"}</p>
       <p><strong>Íþrótt:</strong> ${bestPlayer.sport}</p>
-      <p><strong>Meðaltal:</strong> ${bestPlayer.avg.toFixed(2)}</p>
+      <p><strong>Meðaltal:</strong> ${Number(bestPlayer.avg).toFixed(2)}</p>
       <p><strong>Rating:</strong> ${bestPlayer.rating || "Óskráð"}/10</p>
       <p><strong>Mörk/Stig:</strong> ${bestPlayer.goals}</p>
       <p><strong>Leikir:</strong> ${bestPlayer.games}</p>
@@ -366,8 +349,6 @@ function showPlayerCard() {
 }
 
 function updateCompareDropdowns() {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
-
   const select1 = document.getElementById("comparePlayer1");
   const select2 = document.getElementById("comparePlayer2");
 
@@ -376,13 +357,13 @@ function updateCompareDropdowns() {
   select1.innerHTML = "";
   select2.innerHTML = "";
 
-  savedReports.forEach((item, index) => {
+  savedReportsCache.forEach((item) => {
     const option1 = document.createElement("option");
-    option1.value = index;
+    option1.value = item.id;
     option1.textContent = item.name;
 
     const option2 = document.createElement("option");
-    option2.value = index;
+    option2.value = item.id;
     option2.textContent = item.name;
 
     select1.appendChild(option1);
@@ -391,20 +372,24 @@ function updateCompareDropdowns() {
 }
 
 function comparePlayers() {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
   const comparisonDiv = document.getElementById("comparisonResult");
 
-  if (savedReports.length < 2) {
+  if (savedReportsCache.length < 2) {
     comparisonDiv.innerHTML =
       "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
     return;
   }
 
-  const player1Index = document.getElementById("comparePlayer1").value;
-  const player2Index = document.getElementById("comparePlayer2").value;
+  const player1Id = document.getElementById("comparePlayer1").value;
+  const player2Id = document.getElementById("comparePlayer2").value;
 
-  const player1 = savedReports[player1Index];
-  const player2 = savedReports[player2Index];
+  const player1 = savedReportsCache.find((item) => item.id === player1Id);
+  const player2 = savedReportsCache.find((item) => item.id === player2Id);
+
+  if (!player1 || !player2) {
+    comparisonDiv.innerHTML = "<p>Villa við að finna leikmenn.</p>";
+    return;
+  }
 
   comparisonDiv.innerHTML = `
     <div class="compare-box">
@@ -415,7 +400,7 @@ function comparePlayers() {
           <p><strong>Lið:</strong> ${player1.team}</p>
           <p><strong>Staða:</strong> ${player1.position}</p>
           <p><strong>Rating:</strong> ${player1.rating}/10</p>
-          <p><strong>Meðaltal:</strong> ${player1.avg.toFixed(2)}</p>
+          <p><strong>Meðaltal:</strong> ${Number(player1.avg).toFixed(2)}</p>
           <p><strong>Mörk/Stig:</strong> ${player1.goals}</p>
           <p><strong>Leikir:</strong> ${player1.games}</p>
         </div>
@@ -426,7 +411,7 @@ function comparePlayers() {
           <p><strong>Lið:</strong> ${player2.team}</p>
           <p><strong>Staða:</strong> ${player2.position}</p>
           <p><strong>Rating:</strong> ${player2.rating}/10</p>
-          <p><strong>Meðaltal:</strong> ${player2.avg.toFixed(2)}</p>
+          <p><strong>Meðaltal:</strong> ${Number(player2.avg).toFixed(2)}</p>
           <p><strong>Mörk/Stig:</strong> ${player2.goals}</p>
           <p><strong>Leikir:</strong> ${player2.games}</p>
         </div>
@@ -435,17 +420,14 @@ function comparePlayers() {
   `;
 }
 
-function deleteReport(index) {
-  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
-
-  savedReports.splice(index, 1);
-  localStorage.setItem("reports", JSON.stringify(savedReports));
-
-  showSavedReports();
-  showLeaderboard();
-  showDashboard();
-  showPlayerCard();
-  updateCompareDropdowns();
+async function deleteReport(id) {
+  try {
+    await window.deleteDoc(window.doc(window.db, "reports", id));
+    await loadReportsFromFirebase();
+  } catch (error) {
+    console.error(error);
+    alert("Villa við að eyða skýrslu úr Firebase.");
+  }
 }
 
 function downloadPDF() {
@@ -513,8 +495,11 @@ function downloadPDF() {
   pdfWindow.print();
 }
 
-showSavedReports();
-showLeaderboard();
-showDashboard();
-showPlayerCard();
-updateCompareDropdowns();
+window.addEventListener("load", async () => {
+  try {
+    await loadReportsFromFirebase();
+  } catch (error) {
+    console.error(error);
+    alert("Firebase gögn hlóðust ekki. Athugaðu Firestore reglur.");
+  }
+});
