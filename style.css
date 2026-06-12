@@ -1,16 +1,19 @@
 body {
   font-family: Arial, sans-serif;
   background: #f4f4f4;
-  max-width: 700px;
+  max-width: 900px;
   margin: 40px auto;
   padding: 20px;
 }
 
-h1, h2 {
+h1,
+h2 {
   text-align: center;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
@@ -28,18 +31,34 @@ button {
   margin-top: 10px;
   font-size: 18px;
   cursor: pointer;
+  border: none;
+  border-radius: 10px;
+}
+
+button:hover {
+  opacity: 0.9;
 }
 
 #report,
 #aiReport,
 .saved-report,
 .leaderboard-item,
-.player-card {
+.player-card,
+.compare-box {
   background: white;
   margin-top: 20px;
   padding: 20px;
   border-radius: 12px;
   line-height: 1.6;
+}
+
+#searchInput {
+  width: 100%;
+  padding: 12px;
+  margin: 20px 0;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
 }
 
 #imagePreview {
@@ -99,11 +118,34 @@ button {
 
 .player-card p {
   font-size: 18px;
-}#searchInput {
-  width: 100%;
-  padding: 12px;
-  margin: 20px 0;
-  font-size: 16px;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.compare-card {
   border: 2px solid #ddd;
-  border-radius: 10px;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  background: #fafafa;
+}
+
+.compare-card img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.compare-card h3 {
+  margin-top: 0;
+}
+
+.leaderboard-item {
+  border-left: 5px solid gold;
 }

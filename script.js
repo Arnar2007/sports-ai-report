@@ -208,6 +208,7 @@ function saveReport() {
   showLeaderboard();
   showDashboard();
   showPlayerCard();
+  updateCompareDropdowns();
 }
 
 function showSavedReports() {
@@ -364,6 +365,76 @@ function showPlayerCard() {
   `;
 }
 
+function updateCompareDropdowns() {
+  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
+
+  const select1 = document.getElementById("comparePlayer1");
+  const select2 = document.getElementById("comparePlayer2");
+
+  if (!select1 || !select2) return;
+
+  select1.innerHTML = "";
+  select2.innerHTML = "";
+
+  savedReports.forEach((item, index) => {
+    const option1 = document.createElement("option");
+    option1.value = index;
+    option1.textContent = item.name;
+
+    const option2 = document.createElement("option");
+    option2.value = index;
+    option2.textContent = item.name;
+
+    select1.appendChild(option1);
+    select2.appendChild(option2);
+  });
+}
+
+function comparePlayers() {
+  const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
+  const comparisonDiv = document.getElementById("comparisonResult");
+
+  if (savedReports.length < 2) {
+    comparisonDiv.innerHTML =
+      "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
+    return;
+  }
+
+  const player1Index = document.getElementById("comparePlayer1").value;
+  const player2Index = document.getElementById("comparePlayer2").value;
+
+  const player1 = savedReports[player1Index];
+  const player2 = savedReports[player2Index];
+
+  comparisonDiv.innerHTML = `
+    <div class="compare-box">
+      <div class="compare-grid">
+        <div class="compare-card">
+          ${player1.image ? `<img src="${player1.image}" alt="${player1.name}">` : ""}
+          <h3>${player1.name}</h3>
+          <p><strong>Lið:</strong> ${player1.team}</p>
+          <p><strong>Staða:</strong> ${player1.position}</p>
+          <p><strong>Rating:</strong> ${player1.rating}/10</p>
+          <p><strong>Meðaltal:</strong> ${player1.avg.toFixed(2)}</p>
+          <p><strong>Mörk/Stig:</strong> ${player1.goals}</p>
+          <p><strong>Leikir:</strong> ${player1.games}</p>
+        </div>
+
+        <div class="compare-card">
+          ${player2.image ? `<img src="${player2.image}" alt="${player2.name}">` : ""}
+          <h3>${player2.name}</h3>
+          <p><strong>Lið:</strong> ${player2.team}</p>
+          <p><strong>Staða:</strong> ${player2.position}</p>
+          <p><strong>Rating:</strong> ${player2.rating}/10</p>
+          <p><strong>Meðaltal:</strong> ${player2.avg.toFixed(2)}</p>
+          <p><strong>Mörk/Stig:</strong> ${player2.goals}</p>
+          <p><strong>Leikir:</strong> ${player2.games}</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function deleteReport(index) {
   const savedReports = JSON.parse(localStorage.getItem("reports")) || [];
 
@@ -374,6 +445,7 @@ function deleteReport(index) {
   showLeaderboard();
   showDashboard();
   showPlayerCard();
+  updateCompareDropdowns();
 }
 
 function downloadPDF() {
@@ -445,3 +517,4 @@ showSavedReports();
 showLeaderboard();
 showDashboard();
 showPlayerCard();
+updateCompareDropdowns();

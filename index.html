@@ -54,13 +54,24 @@
 
   <h2>Dashboard</h2>
   <div id="dashboard"></div>
+
   <input
-  id="searchInput"
-  placeholder="🔍 Leita að leikmanni, liði eða stöðu..."
-  oninput="showSavedReports()"
-/>
+    id="searchInput"
+    placeholder="🔍 Leita að leikmanni, liði eða stöðu..."
+    oninput="showSavedReports()"
+  >
+
   <h2>Vistaðar skýrslur</h2>
   <div id="savedReports"></div>
+
+  <h2>Compare Players</h2>
+
+  <select id="comparePlayer1"></select>
+  <select id="comparePlayer2"></select>
+
+  <button onclick="comparePlayers()">Compare</button>
+
+  <div id="comparisonResult"></div>
 
   <h2>Leaderboard</h2>
   <div id="leaderboard"></div>
