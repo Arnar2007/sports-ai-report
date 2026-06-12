@@ -6,8 +6,18 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
-  doc
+  doc,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDNddU67YVTVxtu2JwifpXI5UnRwEhto1g",
@@ -20,12 +30,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 window.db = db;
+window.auth = auth;
+window.provider = provider;
+
 window.collection = collection;
 window.addDoc = addDoc;
 window.getDocs = getDocs;
 window.deleteDoc = deleteDoc;
 window.doc = doc;
+window.query = query;
+window.where = where;
 
-console.log("Firebase connected!");
+window.signInWithPopup = signInWithPopup;
+window.signOut = signOut;
+window.onAuthStateChanged = onAuthStateChanged;
+
+console.log("Firebase + Google Login connected!");

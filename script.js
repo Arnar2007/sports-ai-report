@@ -1,5 +1,6 @@
 let currentImage = "";
 let savedReportsCache = [];
+let currentUser = null;
 
 document.getElementById("playerImage").addEventListener("change", function () {
   const file = this.files[0];
@@ -9,7 +10,6 @@ document.getElementById("playerImage").addEventListener("change", function () {
 
   reader.onload = function (e) {
     currentImage = e.target.result;
-
     const preview = document.getElementById("imagePreview");
     preview.src = currentImage;
     preview.style.display = "block";
@@ -28,15 +28,56 @@ function reportsCollection() {
   return window.collection(window.db, "reports");
 }
 
-async function loadReportsFromFirebase() {
-  const snapshot = await window.getDocs(reportsCollection());
+async function loginWithGoogle() {
+  try {
+    const result = await window.signInWithPopup(window.auth, window.provider);
+    currentUser = result.user;
+    document.getElementById("userInfo").innerHTML = `👤 ${currentUser.displayName}`;
+    await loadReportsFromFirebase();
+  } catch (error) {
+    console.error(error);
+    alert("Villa við innskráningu.");
+  }
+}
 
-  savedReportsCache = snapshot.docs.map((docSnap) => {
-    return {
-      id: docSnap.id,
-      ...docSnap.data()
-    };
-  });
+async function logout() {
+  try {
+    await window.signOut(window.auth);
+    currentUser = null;
+    savedReportsCache = [];
+    document.getElementById("userInfo").innerHTML = "Ekki innskráður";
+    showSavedReports();
+    showLeaderboard();
+    showDashboard();
+    showPlayerCard();
+    updateCompareDropdowns();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function loadReportsFromFirebase() {
+  if (!currentUser) {
+    savedReportsCache = [];
+    showSavedReports();
+    showLeaderboard();
+    showDashboard();
+    showPlayerCard();
+    updateCompareDropdowns();
+    return;
+  }
+
+  const q = window.query(
+    reportsCollection(),
+    window.where("userId", "==", currentUser.uid)
+  );
+
+  const snapshot = await window.getDocs(q);
+
+  savedReportsCache = snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  }));
 
   showSavedReports();
   showLeaderboard();
@@ -124,21 +165,8 @@ async function generateAIReport(name, age, team, season, sport, position, games,
   try {
     const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        age,
-        team,
-        season,
-        sport,
-        position,
-        games,
-        goals,
-        strengths,
-        weaknesses
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, age, team, season, sport, position, games, goals, strengths, weaknesses })
     });
 
     const data = await response.json();
@@ -155,6 +183,11 @@ async function generateAIReport(name, age, team, season, sport, position, games,
 }
 
 async function saveReport() {
+  if (!currentUser) {
+    alert("Þú þarft að skrá þig inn með Google fyrst.");
+    return;
+  }
+
   const aiText = document.getElementById("aiReport").innerText;
   const name = document.getElementById("name").value;
   const age = Number(document.getElementById("age").value);
@@ -167,16 +200,14 @@ async function saveReport() {
   const avg = goals / games;
   const playerRating = calculatePlayerRating(avg);
 
-  if (
-    !aiText ||
-    aiText.includes("mun birtast") ||
-    aiText.includes("AI er að skrifa")
-  ) {
+  if (!aiText || aiText.includes("mun birtast") || aiText.includes("AI er að skrifa")) {
     alert("Búðu fyrst til AI skýrslu.");
     return;
   }
 
   const reportData = {
+    userId: currentUser.uid,
+    userEmail: currentUser.email,
     name,
     age,
     team,
@@ -196,7 +227,7 @@ async function saveReport() {
   try {
     await window.addDoc(reportsCollection(), reportData);
     await loadReportsFromFirebase();
-    alert("Skýrsla vistuð í Firebase!");
+    alert("Skýrsla vistuð!");
   } catch (error) {
     console.error(error);
     alert("Villa við að vista í Firebase.");
@@ -228,9 +259,7 @@ function showSavedReports() {
     savedDiv.innerHTML += `
       <div class="saved-report">
         ${item.image ? `<img src="${item.image}" alt="${item.name}">` : ""}
-
         <h3>${item.name}</h3>
-
         <p><strong>Aldur:</strong> ${item.age || "Óskráð"}</p>
         <p><strong>Lið:</strong> ${item.team || "Óskráð"}</p>
         <p><strong>Tímabil:</strong> ${item.season || "Óskráð"}</p>
@@ -238,9 +267,7 @@ function showSavedReports() {
         <p><strong>Staða:</strong> ${item.position || "Óskráð"}</p>
         <p><strong>Rating:</strong> ${item.rating || "Óskráð"}/10</p>
         <p><strong>Dagsetning:</strong> ${item.date}</p>
-
         <p>${item.report}</p>
-
         <button onclick="deleteReport('${item.id}')">Eyða</button>
       </div>
     `;
@@ -255,7 +282,6 @@ function showLeaderboard() {
 
   sortedReports.forEach((item, index) => {
     let medal = "";
-
     if (index === 0) medal = "🥇";
     else if (index === 1) medal = "🥈";
     else if (index === 2) medal = "🥉";
@@ -280,41 +306,17 @@ function showDashboard() {
   }
 
   const totalPlayers = savedReportsCache.length;
-
-  const totalGoals = savedReportsCache.reduce(
-    (sum, item) => sum + Number(item.goals),
-    0
-  );
-
-  const totalGames = savedReportsCache.reduce(
-    (sum, item) => sum + Number(item.games),
-    0
-  );
-
+  const totalGoals = savedReportsCache.reduce((sum, item) => sum + Number(item.goals), 0);
+  const totalGames = savedReportsCache.reduce((sum, item) => sum + Number(item.games), 0);
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
   const bestPlayer = [...savedReportsCache].sort((a, b) => b.avg - a.avg)[0];
 
   dashboardDiv.innerHTML = `
     <div class="dashboard-grid">
-      <div class="dashboard-card">
-        <h3>Leikmenn</h3>
-        <p>${totalPlayers}</p>
-      </div>
-
-      <div class="dashboard-card">
-        <h3>Heildar mörk/stig</h3>
-        <p>${totalGoals}</p>
-      </div>
-
-      <div class="dashboard-card">
-        <h3>Meðaltal</h3>
-        <p>${overallAvg.toFixed(2)}</p>
-      </div>
-
-      <div class="dashboard-card">
-        <h3>Besti leikmaður</h3>
-        <p>${bestPlayer.name}</p>
-      </div>
+      <div class="dashboard-card"><h3>Leikmenn</h3><p>${totalPlayers}</p></div>
+      <div class="dashboard-card"><h3>Heildar mörk/stig</h3><p>${totalGoals}</p></div>
+      <div class="dashboard-card"><h3>Meðaltal</h3><p>${overallAvg.toFixed(2)}</p></div>
+      <div class="dashboard-card"><h3>Besti leikmaður</h3><p>${bestPlayer.name}</p></div>
     </div>
   `;
 }
@@ -331,11 +333,7 @@ function showPlayerCard() {
 
   playerCardDiv.innerHTML = `
     <div class="player-card">
-      ${
-        bestPlayer.image
-          ? `<img src="${bestPlayer.image}" alt="${bestPlayer.name}">`
-          : ""
-      }
+      ${bestPlayer.image ? `<img src="${bestPlayer.image}" alt="${bestPlayer.name}">` : ""}
       <h3>🏆 ${bestPlayer.name}</h3>
       <p><strong>Lið:</strong> ${bestPlayer.team || "Óskráð"}</p>
       <p><strong>Staða:</strong> ${bestPlayer.position || "Óskráð"}</p>
@@ -375,8 +373,7 @@ function comparePlayers() {
   const comparisonDiv = document.getElementById("comparisonResult");
 
   if (savedReportsCache.length < 2) {
-    comparisonDiv.innerHTML =
-      "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
+    comparisonDiv.innerHTML = "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
     return;
   }
 
@@ -385,11 +382,6 @@ function comparePlayers() {
 
   const player1 = savedReportsCache.find((item) => item.id === player1Id);
   const player2 = savedReportsCache.find((item) => item.id === player2Id);
-
-  if (!player1 || !player2) {
-    comparisonDiv.innerHTML = "<p>Villa við að finna leikmenn.</p>";
-    return;
-  }
 
   comparisonDiv.innerHTML = `
     <div class="compare-box">
@@ -434,11 +426,7 @@ function downloadPDF() {
   const report = document.getElementById("report").innerHTML;
   const aiReport = document.getElementById("aiReport").innerHTML;
 
-  if (
-    !aiReport ||
-    aiReport.includes("mun birtast") ||
-    aiReport.includes("AI er að skrifa")
-  ) {
+  if (!aiReport || aiReport.includes("mun birtast") || aiReport.includes("AI er að skrifa")) {
     alert("Búðu fyrst til skýrslu.");
     return;
   }
@@ -450,39 +438,15 @@ function downloadPDF() {
       <head>
         <title>Sports AI Report</title>
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 30px;
-            line-height: 1.6;
-          }
-
-          h1 {
-            text-align: center;
-          }
-
-          .section {
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 10px;
-          }
-
-          img {
-            width: 140px;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 50%;
-          }
+          body { font-family: Arial, sans-serif; padding: 30px; line-height: 1.6; }
+          h1 { text-align: center; }
+          .section { border: 1px solid #ddd; padding: 20px; margin-top: 20px; border-radius: 10px; }
+          img { width: 140px; height: 140px; object-fit: cover; border-radius: 50%; }
         </style>
       </head>
-
       <body>
         <h1>Sports AI Report</h1>
-
-        <div class="section">
-          ${report}
-        </div>
-
+        <div class="section">${report}</div>
         <div class="section">
           <h2>AI Skýrsla</h2>
           ${aiReport}
@@ -495,11 +459,19 @@ function downloadPDF() {
   pdfWindow.print();
 }
 
-window.addEventListener("load", async () => {
-  try {
+window.onAuthStateChanged(window.auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById("userInfo").innerHTML = `👤 ${user.displayName}`;
     await loadReportsFromFirebase();
-  } catch (error) {
-    console.error(error);
-    alert("Firebase gögn hlóðust ekki. Athugaðu Firestore reglur.");
+  } else {
+    currentUser = null;
+    savedReportsCache = [];
+    document.getElementById("userInfo").innerHTML = "Ekki innskráður";
+    showSavedReports();
+    showLeaderboard();
+    showDashboard();
+    showPlayerCard();
+    updateCompareDropdowns();
   }
 });
