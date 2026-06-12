@@ -1,6 +1,8 @@
 let currentImage = "";
 let savedReportsCache = [];
 let currentUser = null;
+let userXP = 0;
+let userLevel = 1;
 
 document.getElementById("playerImage").addEventListener("change", function () {
   const file = this.files[0];
@@ -24,6 +26,37 @@ function calculatePlayerRating(avg) {
   return playerRating.toFixed(1);
 }
 
+function calculateLevel(xp) {
+  return Math.floor(xp / 100) + 1;
+}
+
+function addXP(amount) {
+  if (!currentUser) return;
+
+  userXP += amount;
+  userLevel = calculateLevel(userXP);
+
+  localStorage.setItem(`xp_${currentUser.uid}`, userXP);
+
+  updateXPDisplay();
+}
+
+function updateXPDisplay() {
+  const xpDiv = document.getElementById("xpInfo");
+  if (!xpDiv) return;
+
+  const progress = userXP % 100;
+
+  xpDiv.innerHTML = `
+    <h3>⭐ Level ${userLevel}</h3>
+    <p>${userXP} XP</p>
+
+    <div class="xp-bar">
+      <div class="xp-fill" style="width:${progress}%"></div>
+    </div>
+  `;
+}
+
 function reportsCollection() {
   return window.collection(window.db, "reports");
 }
@@ -32,7 +65,14 @@ async function loginWithGoogle() {
   try {
     const result = await window.signInWithPopup(window.auth, window.provider);
     currentUser = result.user;
-    document.getElementById("userInfo").innerHTML = `👤 ${currentUser.displayName}`;
+
+    document.getElementById("userInfo").innerHTML =
+      `👤 ${currentUser.displayName}`;
+
+    userXP = Number(localStorage.getItem(`xp_${currentUser.uid}`)) || 0;
+    userLevel = calculateLevel(userXP);
+    updateXPDisplay();
+
     await loadReportsFromFirebase();
   } catch (error) {
     console.error(error);
@@ -43,9 +83,15 @@ async function loginWithGoogle() {
 async function logout() {
   try {
     await window.signOut(window.auth);
+
     currentUser = null;
     savedReportsCache = [];
+    userXP = 0;
+    userLevel = 1;
+
     document.getElementById("userInfo").innerHTML = "Ekki innskráður";
+    updateXPDisplay();
+
     showSavedReports();
     showLeaderboard();
     showDashboard();
@@ -155,19 +201,57 @@ function generateReport() {
     <p>${weaknesses}</p>
   `;
 
-  generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses);
+  generateAIReport(
+    name,
+    age,
+    team,
+    season,
+    sport,
+    position,
+    games,
+    goals,
+    strengths,
+    weaknesses
+  );
 }
 
-async function generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses) {
+async function generateAIReport(
+  name,
+  age,
+  team,
+  season,
+  sport,
+  position,
+  games,
+  goals,
+  strengths,
+  weaknesses
+) {
   const aiDiv = document.getElementById("aiReport");
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
   try {
-    const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, age, team, season, sport, position, games, goals, strengths, weaknesses })
-    });
+    const response = await fetch(
+      "https://sports-ai-report.onrender.com/generate-report",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          age,
+          team,
+          season,
+          sport,
+          position,
+          games,
+          goals,
+          strengths,
+          weaknesses
+        })
+      }
+    );
 
     const data = await response.json();
 
@@ -200,7 +284,11 @@ async function saveReport() {
   const avg = goals / games;
   const playerRating = calculatePlayerRating(avg);
 
-  if (!aiText || aiText.includes("mun birtast") || aiText.includes("AI er að skrifa")) {
+  if (
+    !aiText ||
+    aiText.includes("mun birtast") ||
+    aiText.includes("AI er að skrifa")
+  ) {
     alert("Búðu fyrst til AI skýrslu.");
     return;
   }
@@ -227,7 +315,10 @@ async function saveReport() {
   try {
     await window.addDoc(reportsCollection(), reportData);
     await loadReportsFromFirebase();
-    alert("Skýrsla vistuð!");
+
+    addXP(10);
+
+    alert("Skýrsla vistuð! +10 XP");
   } catch (error) {
     console.error(error);
     alert("Villa við að vista í Firebase.");
@@ -306,8 +397,14 @@ function showDashboard() {
   }
 
   const totalPlayers = savedReportsCache.length;
-  const totalGoals = savedReportsCache.reduce((sum, item) => sum + Number(item.goals), 0);
-  const totalGames = savedReportsCache.reduce((sum, item) => sum + Number(item.games), 0);
+  const totalGoals = savedReportsCache.reduce(
+    (sum, item) => sum + Number(item.goals),
+    0
+  );
+  const totalGames = savedReportsCache.reduce(
+    (sum, item) => sum + Number(item.games),
+    0
+  );
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
   const bestPlayer = [...savedReportsCache].sort((a, b) => b.avg - a.avg)[0];
 
@@ -370,10 +467,18 @@ function updateCompareDropdowns() {
 }
 
 function comparePlayers() {
+  if (!currentUser) {
+    alert("Þú þarft að skrá þig inn fyrst.");
+    return;
+  }
+
+  addXP(2);
+
   const comparisonDiv = document.getElementById("comparisonResult");
 
   if (savedReportsCache.length < 2) {
-    comparisonDiv.innerHTML = "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
+    comparisonDiv.innerHTML =
+      "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
     return;
   }
 
@@ -462,12 +567,24 @@ function downloadPDF() {
 window.onAuthStateChanged(window.auth, async (user) => {
   if (user) {
     currentUser = user;
-    document.getElementById("userInfo").innerHTML = `👤 ${user.displayName}`;
+
+    document.getElementById("userInfo").innerHTML =
+      `👤 ${user.displayName}`;
+
+    userXP = Number(localStorage.getItem(`xp_${user.uid}`)) || 0;
+    userLevel = calculateLevel(userXP);
+    updateXPDisplay();
+
     await loadReportsFromFirebase();
   } else {
     currentUser = null;
     savedReportsCache = [];
+    userXP = 0;
+    userLevel = 1;
+
     document.getElementById("userInfo").innerHTML = "Ekki innskráður";
+
+    updateXPDisplay();
     showSavedReports();
     showLeaderboard();
     showDashboard();
