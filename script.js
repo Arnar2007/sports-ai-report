@@ -30,15 +30,11 @@ function calculateLevel(xp) {
   return Math.floor(xp / 100) + 1;
 }
 
-function addXP(amount) {
-  if (!currentUser) return;
-
-  userXP += amount;
-  userLevel = calculateLevel(userXP);
-
-  localStorage.setItem(`xp_${currentUser.uid}`, userXP);
-
-  updateXPDisplay();
+function getCurrentBadge() {
+  if (userXP >= 500) return "🥇 Gold Member";
+  if (userXP >= 250) return "🥈 Silver Member";
+  if (userXP >= 100) return "🥉 Bronze Member";
+  return "🔰 Rookie";
 }
 
 function updateXPDisplay() {
@@ -50,11 +46,56 @@ function updateXPDisplay() {
   xpDiv.innerHTML = `
     <h3>⭐ Level ${userLevel}</h3>
     <p>${userXP} XP</p>
+    <p>${getCurrentBadge()}</p>
 
     <div class="xp-bar">
       <div class="xp-fill" style="width:${progress}%"></div>
     </div>
   `;
+
+  showRewardShop();
+}
+
+function showRewardShop() {
+  const rewardDiv = document.getElementById("rewardShop");
+  if (!rewardDiv) return;
+
+  const rewards = [
+    { name: "🥉 Bronze Badge", xp: 100 },
+    { name: "🥈 Silver Badge", xp: 250 },
+    { name: "🥇 Gold Badge", xp: 500 },
+    { name: "🎁 Sports AI Sticker Pack", xp: 1000 },
+    { name: "🎁 Mystery Box", xp: 2500 }
+  ];
+
+  rewardDiv.innerHTML = `
+    <div class="reward-card">
+      <h3>${getCurrentBadge()}</h3>
+      <p>Þú ert með ${userXP} XP</p>
+    </div>
+  `;
+
+  rewards.forEach((reward) => {
+    const unlocked = userXP >= reward.xp;
+
+    rewardDiv.innerHTML += `
+      <div class="reward-card ${unlocked ? "" : "locked"}">
+        <h3>${reward.name}</h3>
+        <p>Krefst: ${reward.xp} XP</p>
+        <p>${unlocked ? "✅ Unlocked" : "🔒 Locked"}</p>
+      </div>
+    `;
+  });
+}
+
+function addXP(amount) {
+  if (!currentUser) return;
+
+  userXP += amount;
+  userLevel = calculateLevel(userXP);
+
+  localStorage.setItem(`xp_${currentUser.uid}`, userXP);
+  updateXPDisplay();
 }
 
 function reportsCollection() {
@@ -201,57 +242,19 @@ function generateReport() {
     <p>${weaknesses}</p>
   `;
 
-  generateAIReport(
-    name,
-    age,
-    team,
-    season,
-    sport,
-    position,
-    games,
-    goals,
-    strengths,
-    weaknesses
-  );
+  generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses);
 }
 
-async function generateAIReport(
-  name,
-  age,
-  team,
-  season,
-  sport,
-  position,
-  games,
-  goals,
-  strengths,
-  weaknesses
-) {
+async function generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses) {
   const aiDiv = document.getElementById("aiReport");
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
   try {
-    const response = await fetch(
-      "https://sports-ai-report.onrender.com/generate-report",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name,
-          age,
-          team,
-          season,
-          sport,
-          position,
-          games,
-          goals,
-          strengths,
-          weaknesses
-        })
-      }
-    );
+    const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, age, team, season, sport, position, games, goals, strengths, weaknesses })
+    });
 
     const data = await response.json();
 
@@ -284,11 +287,7 @@ async function saveReport() {
   const avg = goals / games;
   const playerRating = calculatePlayerRating(avg);
 
-  if (
-    !aiText ||
-    aiText.includes("mun birtast") ||
-    aiText.includes("AI er að skrifa")
-  ) {
+  if (!aiText || aiText.includes("mun birtast") || aiText.includes("AI er að skrifa")) {
     alert("Búðu fyrst til AI skýrslu.");
     return;
   }
@@ -397,14 +396,8 @@ function showDashboard() {
   }
 
   const totalPlayers = savedReportsCache.length;
-  const totalGoals = savedReportsCache.reduce(
-    (sum, item) => sum + Number(item.goals),
-    0
-  );
-  const totalGames = savedReportsCache.reduce(
-    (sum, item) => sum + Number(item.games),
-    0
-  );
+  const totalGoals = savedReportsCache.reduce((sum, item) => sum + Number(item.goals), 0);
+  const totalGames = savedReportsCache.reduce((sum, item) => sum + Number(item.games), 0);
   const overallAvg = totalGames > 0 ? totalGoals / totalGames : 0;
   const bestPlayer = [...savedReportsCache].sort((a, b) => b.avg - a.avg)[0];
 
@@ -477,8 +470,7 @@ function comparePlayers() {
   const comparisonDiv = document.getElementById("comparisonResult");
 
   if (savedReportsCache.length < 2) {
-    comparisonDiv.innerHTML =
-      "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
+    comparisonDiv.innerHTML = "<p>Vistaðu að minnsta kosti tvo leikmenn til að bera saman.</p>";
     return;
   }
 

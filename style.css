@@ -167,4 +167,19 @@ button:hover {
   height: 100%;
   background: gold;
   transition: 0.3s;
+}.reward-card {
+  background: white;
+  padding: 18px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border-left: 6px solid gold;
+}
+
+.reward-card.locked {
+  opacity: 0.5;
+  border-left-color: #aaa;
+}
+
+.reward-card h3 {
+  margin-top: 0;
 }
