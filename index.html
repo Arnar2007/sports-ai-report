@@ -2,27 +2,31 @@
 <html lang="is">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sports AI Report</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>Sports AI Report</h1>
+  <h1>🏆 Sports AI Report</h1>
+
   <div id="authBox">
     <button onclick="loginWithGoogle()">Login with Google</button>
     <button onclick="logout()">Logout</button>
     <p id="userInfo">Ekki innskráður</p>
+    <div id="xpInfo"></div>
   </div>
-  <div id="xpInfo"></div>
+
   <h2>🎁 Reward Shop</h2>
-<div id="rewardShop"></div>
+  <div id="rewardShop"></div>
+
   <input id="name" placeholder="Nafn leikmanns">
   <input id="age" type="number" placeholder="Aldur">
   <input id="team" placeholder="Lið">
-  <input id="season" placeholder="Tímabil, t.d. 2025/26">
+  <input id="season" placeholder="Tímabil">
 
   <input id="playerImage" type="file" accept="image/*">
-  <img id="imagePreview" alt="Forskoðun myndar">
+  <img id="imagePreview" alt="Leikmannsmynd">
 
   <select id="sport">
     <option value="Fótbolti">Fótbolti</option>
@@ -50,16 +54,16 @@
 
   <div id="report"></div>
 
-  <h2>AI Skýrsla</h2>
+  <h2>🤖 AI Skýrsla</h2>
   <div id="aiReport">AI skýrsla mun birtast hér...</div>
 
   <button onclick="saveReport()">Vista skýrslu</button>
   <button onclick="downloadPDF()">📄 Sækja PDF</button>
 
-  <h2>Player of the Season</h2>
+  <h2>🏆 Player of the Season</h2>
   <div id="playerCard"></div>
 
-  <h2>Dashboard</h2>
+  <h2>📊 Dashboard</h2>
   <div id="dashboard"></div>
 
   <input
@@ -68,20 +72,28 @@
     oninput="showSavedReports()"
   >
 
-  <h2>Vistaðar skýrslur</h2>
+  <h2>📁 Vistaðar skýrslur</h2>
   <div id="savedReports"></div>
 
-  <h2>Compare Players</h2>
-
+  <h2>⚔️ Compare Players</h2>
   <select id="comparePlayer1"></select>
   <select id="comparePlayer2"></select>
-
-  <button onclick="comparePlayers()">Compare</button>
-
+  <button onclick="comparePlayers()">Compare Players</button>
   <div id="comparisonResult"></div>
 
-  <h2>Leaderboard</h2>
+  <h2>🥇 Leaderboard</h2>
   <div id="leaderboard"></div>
+
+  <div id="claimModal" style="display:none;">
+    <h2>🎁 Claim Reward</h2>
+
+    <input id="claimName" placeholder="Fullt nafn">
+    <input id="claimAddress" placeholder="Heimilisfang">
+    <input id="claimZip" placeholder="Póstnúmer">
+    <input id="claimCountry" placeholder="Land">
+
+    <button onclick="submitClaim()">Senda beiðni</button>
+  </div>
 
   <script type="module" src="firebase.js"></script>
   <script src="script.js"></script>

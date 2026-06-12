@@ -3,6 +3,7 @@ let savedReportsCache = [];
 let currentUser = null;
 let userXP = 0;
 let userLevel = 1;
+let selectedReward = "";
 
 document.getElementById("playerImage").addEventListener("change", function () {
   const file = this.files[0];
@@ -83,9 +84,19 @@ function showRewardShop() {
         <h3>${reward.name}</h3>
         <p>Krefst: ${reward.xp} XP</p>
         <p>${unlocked ? "✅ Unlocked" : "🔒 Locked"}</p>
+        ${
+          unlocked
+            ? `<button onclick="claimReward('${reward.name}')">Claim Reward</button>`
+            : ""
+        }
       </div>
     `;
   });
+}
+
+function claimReward(rewardName) {
+  selectedReward = rewardName;
+  document.getElementById("claimModal").style.display = "block";
 }
 
 function addXP(amount) {
@@ -516,6 +527,51 @@ async function deleteReport(id) {
   } catch (error) {
     console.error(error);
     alert("Villa við að eyða skýrslu úr Firebase.");
+  }
+}
+
+async function submitClaim() {
+  if (!currentUser) {
+    alert("Skráðu þig inn fyrst.");
+    return;
+  }
+
+  const name = document.getElementById("claimName").value;
+  const address = document.getElementById("claimAddress").value;
+  const zip = document.getElementById("claimZip").value;
+  const country = document.getElementById("claimCountry").value;
+
+  if (!name || !address || !zip || !country) {
+    alert("Fylltu út alla reiti.");
+    return;
+  }
+
+  try {
+    await window.addDoc(
+      window.collection(window.db, "rewardClaims"),
+      {
+        userId: currentUser.uid,
+        email: currentUser.email,
+        reward: selectedReward,
+        name,
+        address,
+        zip,
+        country,
+        createdAt: Date.now()
+      }
+    );
+
+    alert("🎉 Reward claim sent!");
+
+    document.getElementById("claimModal").style.display = "none";
+
+    document.getElementById("claimName").value = "";
+    document.getElementById("claimAddress").value = "";
+    document.getElementById("claimZip").value = "";
+    document.getElementById("claimCountry").value = "";
+  } catch (error) {
+    console.error(error);
+    alert("Villa við að senda claim.");
   }
 }
 

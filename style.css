@@ -182,4 +182,16 @@ button:hover {
 
 .reward-card h3 {
   margin-top: 0;
+}#claimModal {
+  margin-top: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid gold;
+}
+
+#claimModal input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
 }
