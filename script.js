@@ -126,6 +126,7 @@ async function loginWithGoogle() {
     updateXPDisplay();
 
     await loadReportsFromFirebase();
+    await loadAdminClaims();
   } catch (error) {
     console.error(error);
     alert("Villa við innskráningu.");
@@ -142,8 +143,9 @@ async function logout() {
     userLevel = 1;
 
     document.getElementById("userInfo").innerHTML = "Ekki innskráður";
-    updateXPDisplay();
+    document.getElementById("adminPanel").style.display = "none";
 
+    updateXPDisplay();
     showSavedReports();
     showLeaderboard();
     showDashboard();
@@ -253,10 +255,32 @@ function generateReport() {
     <p>${weaknesses}</p>
   `;
 
-  generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses);
+  generateAIReport(
+    name,
+    age,
+    team,
+    season,
+    sport,
+    position,
+    games,
+    goals,
+    strengths,
+    weaknesses
+  );
 }
 
-async function generateAIReport(name, age, team, season, sport, position, games, goals, strengths, weaknesses) {
+async function generateAIReport(
+  name,
+  age,
+  team,
+  season,
+  sport,
+  position,
+  games,
+  goals,
+  strengths,
+  weaknesses
+) {
   const aiDiv = document.getElementById("aiReport");
   aiDiv.innerHTML = "AI er að skrifa skýrslu...";
 
@@ -264,7 +288,18 @@ async function generateAIReport(name, age, team, season, sport, position, games,
     const response = await fetch("https://sports-ai-report.onrender.com/generate-report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, age, team, season, sport, position, games, goals, strengths, weaknesses })
+      body: JSON.stringify({
+        name,
+        age,
+        team,
+        season,
+        sport,
+        position,
+        games,
+        goals,
+        strengths,
+        weaknesses
+      })
     });
 
     const data = await response.json();
@@ -557,6 +592,7 @@ async function submitClaim() {
         address,
         zip,
         country,
+        status: "Pending",
         createdAt: Date.now()
       }
     );
@@ -569,9 +605,82 @@ async function submitClaim() {
     document.getElementById("claimAddress").value = "";
     document.getElementById("claimZip").value = "";
     document.getElementById("claimCountry").value = "";
+
+    await loadAdminClaims();
   } catch (error) {
     console.error(error);
     alert("Villa við að senda claim.");
+  }
+}
+
+async function loadAdminClaims() {
+  if (!currentUser) return;
+
+  const adminPanel = document.getElementById("adminPanel");
+  const adminDiv = document.getElementById("adminClaims");
+
+  if (currentUser.email !== "arnarbrynjar12@gmail.com") {
+    adminPanel.style.display = "none";
+    return;
+  }
+
+  adminPanel.style.display = "block";
+
+  try {
+    const snapshot = await window.getDocs(
+      window.collection(window.db, "rewardClaims")
+    );
+
+    adminDiv.innerHTML = "";
+
+    if (snapshot.empty) {
+      adminDiv.innerHTML = "<p>Engar reward beiðnir komnar.</p>";
+      return;
+    }
+
+    snapshot.forEach((docSnap) => {
+      const claim = docSnap.data();
+
+      adminDiv.innerHTML += `
+        <div class="admin-card">
+          <h3>${claim.reward}</h3>
+
+          <p><strong>Nafn:</strong> ${claim.name}</p>
+          <p><strong>Email:</strong> ${claim.email}</p>
+          <p><strong>Heimilisfang:</strong> ${claim.address}</p>
+          <p><strong>Póstnúmer:</strong> ${claim.zip}</p>
+          <p><strong>Land:</strong> ${claim.country}</p>
+          <p><strong>Status:</strong> ${claim.status || "Pending"}</p>
+
+          <button onclick="updateClaimStatus('${docSnap.id}', 'Shipped')">
+            🚚 Shipped
+          </button>
+
+          <button onclick="updateClaimStatus('${docSnap.id}', 'Delivered')">
+            ✅ Delivered
+          </button>
+        </div>
+      `;
+    });
+  } catch (error) {
+    console.error(error);
+    alert("Villa við að hlaða admin panel.");
+  }
+}
+
+async function updateClaimStatus(id, status) {
+  try {
+    await window.updateDoc(
+      window.doc(window.db, "rewardClaims", id),
+      {
+        status: status
+      }
+    );
+
+    await loadAdminClaims();
+  } catch (error) {
+    console.error(error);
+    alert("Villa við að uppfæra status.");
   }
 }
 
@@ -624,6 +733,7 @@ window.onAuthStateChanged(window.auth, async (user) => {
     updateXPDisplay();
 
     await loadReportsFromFirebase();
+    await loadAdminClaims();
   } else {
     currentUser = null;
     savedReportsCache = [];
@@ -631,6 +741,7 @@ window.onAuthStateChanged(window.auth, async (user) => {
     userLevel = 1;
 
     document.getElementById("userInfo").innerHTML = "Ekki innskráður";
+    document.getElementById("adminPanel").style.display = "none";
 
     updateXPDisplay();
     showSavedReports();

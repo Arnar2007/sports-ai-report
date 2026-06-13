@@ -44,7 +44,11 @@ button:hover {
 .saved-report,
 .leaderboard-item,
 .player-card,
-.compare-box {
+.compare-box,
+.reward-card,
+#claimModal,
+#authBox,
+.admin-card {
   background: white;
   margin-top: 20px;
   padding: 20px;
@@ -53,10 +57,6 @@ button:hover {
 }
 
 #searchInput {
-  width: 100%;
-  padding: 12px;
-  margin: 20px 0;
-  font-size: 16px;
   border: 2px solid #ddd;
   border-radius: 10px;
 }
@@ -71,29 +71,25 @@ button:hover {
   border: 3px solid #ddd;
 }
 
-.dashboard-grid {
+.dashboard-grid,
+.compare-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
   margin-top: 20px;
 }
 
-.dashboard-card {
+.dashboard-card,
+.compare-card {
   background: white;
   padding: 20px;
   border-radius: 12px;
   text-align: center;
 }
 
-.dashboard-card h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
 .dashboard-card p {
   font-size: 26px;
   font-weight: bold;
-  margin-top: 10px;
 }
 
 .player-card {
@@ -102,57 +98,14 @@ button:hover {
 }
 
 .player-card img,
-.saved-report img {
+.saved-report img,
+.compare-card img {
   width: 160px;
   height: 160px;
   object-fit: cover;
   border-radius: 50%;
   border: 3px solid gold;
   margin-bottom: 15px;
-}
-
-.player-card h3 {
-  margin-top: 0;
-  font-size: 28px;
-}
-
-.player-card p {
-  font-size: 18px;
-}
-
-.compare-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.compare-card {
-  border: 2px solid #ddd;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  background: #fafafa;
-}
-
-.compare-card img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 50%;
-  margin-bottom: 10px;
-}
-
-.compare-card h3 {
-  margin-top: 0;
-}
-
-.leaderboard-item {
-  border-left: 5px solid gold;
-}#xpInfo {
-  margin-top: 15px;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 10px;
 }
 
 .xp-bar {
@@ -167,11 +120,9 @@ button:hover {
   height: 100%;
   background: gold;
   transition: 0.3s;
-}.reward-card {
-  background: white;
-  padding: 18px;
-  margin-top: 12px;
-  border-radius: 12px;
+}
+
+.reward-card {
   border-left: 6px solid gold;
 }
 
@@ -180,18 +131,14 @@ button:hover {
   border-left-color: #aaa;
 }
 
-.reward-card h3 {
-  margin-top: 0;
-}#claimModal {
-  margin-top: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
+#claimModal {
   border: 2px solid gold;
 }
 
-#claimModal input {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 10px;
+.admin-card {
+  border-left: 5px solid #4caf50;
+}
+
+.admin-card button {
+  margin-top: 8px;
 }

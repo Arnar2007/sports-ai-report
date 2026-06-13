@@ -8,7 +8,8 @@ import {
   deleteDoc,
   doc,
   query,
-  where
+  where,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
@@ -44,6 +45,7 @@ window.deleteDoc = deleteDoc;
 window.doc = doc;
 window.query = query;
 window.where = where;
+window.updateDoc = updateDoc;
 
 window.signInWithPopup = signInWithPopup;
 window.signOut = signOut;
